@@ -1,0 +1,8 @@
+.streamlit/
+usuarios_tlearnet.csv
+# Caché de Python
+__pycache__/
+*.pyc
+# Archivos del sistema
+.DS_Store
+Thumbs.db
