@@ -57,6 +57,8 @@ with tab1:
                 
             except Exception as e:
                 st.error("No se pudo crear la cuenta. Verifica que la contraseña tenga 6+ caracteres o que el nombre no esté repetido.")
+                st.error(f"Error real de Firebase: {e}")
+                
         else:
             st.error("Por favor, llena todos los campos.")
 
