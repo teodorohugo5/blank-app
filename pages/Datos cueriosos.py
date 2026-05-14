@@ -34,6 +34,15 @@ biblioteca_curiosidades = [
     {"Titulo": "El primer mensaje de texto (SMS)","Texto": "Se envió el 3 de diciembre de 1992 y decía 'Merry Christmas'. Se envió desde una computadora porque los celulares no tenían teclado de letras."}
     ]
 st.title("¿Sabías que...? 💡")
+if not firebase_admin._apps:
+    try:
+        # Extraemos la info de tus Secrets
+        firebase_secrets = dict(st.secrets["firebase"])
+        cred = credentials.Certificate(firebase_secrets)
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        st.error(f"Error al conectar con Firebase: {e}")
+        st.stop()
 
 db = firestore.client()
 
