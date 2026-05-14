@@ -10,7 +10,7 @@ except Exception:
     st.stop() # Detiene la ejecución si no hay llave
 
 # Usar el nombre de modelo estándar
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-3-flash-preview')
 st.markdown("""
     <style>
     .stApp {
