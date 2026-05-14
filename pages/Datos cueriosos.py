@@ -34,57 +34,46 @@ biblioteca_curiosidades = [
     ]
 st.title("¿Sabías que...? 💡")
 
+db = firestore.client()
+
 if 'usuario_logueado' in st.session_state:
-    usuario = st.session_state.usuario_logueado
+    usuario_email = st.session_state.usuario_logueado
     
-    if os.path.exists("usuarios_tlearnet.csv"):
-        df = pd.read_csv("usuarios_tlearnet.csv")
-        
-        if usuario in df['usuario'].values:
-            indice = df[df['usuario'] == usuario].index[0]
-            progreso = int(df.at[indice, 'progreso_curioso'])
-            
-            # Datos que quedan aun
-            if progreso < len(biblioteca_curiosidades):
-                dato = biblioteca_curiosidades[progreso]
-                
-                # DISEÑO DEL CUADRO AZUL
-                st.markdown(f"""
-                <div style="
-                    background-color: #E0F7FA; 
-                    padding: 25px; 
-                    border-radius: 20px; 
-                    border: 3px solid #4DD0E1;
-                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-                ">
-<h2 style="color: black; font-family: 'Arial', sans-serif; margin-top: 0; font-weight: bold;">
-{dato['Titulo']}
-</h2>
-<p style="color: black; font-size: 19px; font-family: 'Verdana', sans-serif; line-height: 1.5;">
-{dato['Texto']}
-</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.write("")
-                
-                # Guarda y regresa al menú
-                if st.button("¡Qué increíble! Ver más después ➡️"):
-                    # Actuliza el progreso
-                    df.at[indice, 'progreso_curioso'] = progreso + 1
-                    df.to_csv("usuarios_tlearnet.csv", index=False)
-                    
-                    st.success("¡Dato guardado en tu memoria de héroe!")
-                    st.switch_page("pages/Pantalla Principal.py")
-            else:
-                st.balloons()
-                st.subheader("¡Vaya! Eres un experto en historia digital.")
-                st.write("Ya conoces todos los datos curiosos que tenemos por ahora.")
-                if st.button("Volver al Inicio"):
-                    st.switch_page("pages/Pantalla Principal.py")
+    user_ref = db.collection("usuarios").document(usuario_email)
+    doc = user_ref.get()
+
+    if doc.exists:
+        datos_usuario = doc.to_dict()
+        progreso = datos_usuario.get('progreso_curioso', 0)
     else:
-        st.error("Error: No se encontró la base de datos de héroes.")
+        user_ref.set({'progreso_curioso': 0})
+        progreso = 0
+
+    if progreso < len(biblioteca_curiosidades):
+        dato = biblioteca_curiosidades[progreso]
+        
+        st.markdown(f"""
+        <div style="background-color: #E0F7FA; padding: 25px; border-radius: 20px; border: 3px solid #4DD0E1; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: black; font-family: 'Arial', sans-serif; margin-top: 0; font-weight: bold;">{dato['Titulo']}</h2>
+            <p style="color: black; font-size: 19px; font-family: 'Verdana', sans-serif; line-height: 1.5;">{dato['Texto']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.write("")
+        
+        if st.button("¡Qué increíble! Ver más después ➡️"):
+            user_ref.update({'progreso_curioso': progreso + 1})
+            
+            st.success("¡Dato guardado en tu memoria de héroe!")
+            st.switch_page("pages/Principal.py") 
+            
+    else:
+        st.balloons()
+        st.subheader("¡Vaya! Eres un experto en historia digital.")
+        st.write("Ya conoces todos los datos curiosos que tenemos por ahora.")
+        if st.button("Volver al Inicio"):
+            st.switch_page("pages/Principal.py")
 else:
     st.warning("Héroe, primero debes iniciar sesión para descubrir secretos.")
     if st.button("Ir al Login"):
-        st.switch_page("Iniciar_sesion.py")
+        st.switch_page("app.py")
