@@ -1,8 +1,16 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-genai.configure(api_key="AIzaSyBKKYSi6QIpIxEc0X5nR0HPBb8IlGhYRgU")
-model = genai.GenerativeModel('gemini-3-flash-preview')
+try:
+    # Busca 'GEMINI_KEY' en tus Secrets de Streamlit Cloud
+    api_key = st.secrets["GEMINI_KEY"]
+    genai.configure(api_key=api_key)
+except Exception:
+    st.error("Error: No se encontró la API Key en los Secrets.")
+    st.stop() # Detiene la ejecución si no hay llave
+
+# Usar el nombre de modelo estándar
+model = genai.GenerativeModel('gemini-1.5-flash')
 st.markdown("""
     <style>
     .stApp {
