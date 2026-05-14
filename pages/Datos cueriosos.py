@@ -70,14 +70,14 @@ if 'usuario_logueado' in st.session_state:
             # --- Guardar progreso en Realtime Database ---
             db.child("usuarios").child(usuario_key).child("progreso_curioso").set(progreso + 1)
             st.success("¡Dato guardado en tu memoria de héroe!")
-            st.switch_page("pages/Principal.py")
+            st.switch_page("pages/Pantalla Principal.py")
  
     else:
         st.balloons()
         st.subheader("¡Vaya! Eres un experto en historia digital.")
         st.write("Ya conoces todos los datos curiosos que tenemos por ahora.")
         if st.button("Volver al Inicio"):
-            st.switch_page("pages/Principal.py")
+            st.switch_page("pages/Pantalla Principal.py")
  
 else:
     st.warning("Héroe, primero debes iniciar sesión para descubrir secretos.")
