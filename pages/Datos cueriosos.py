@@ -1,7 +1,19 @@
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore
-import os
+import pyrebase
+
+firebase_config = {
+    "apiKey": st.secrets["firebase"]["apiKey"],
+    "authDomain": st.secrets["firebase"]["authDomain"],
+    "projectId": st.secrets["firebase"]["projectId"],
+    "storageBucket": st.secrets["firebase"]["storageBucket"],
+    "messagingSenderId": st.secrets["firebase"]["messagingSenderId"],
+    "appId": st.secrets["firebase"]["appId"],
+    "databaseURL": st.secrets["firebase"]["databaseURL"]
+}
+firebase = pyrebase.initialize_app(firebase_config)
+db = firebase.database()
+
+
 st.markdown("""
     <style>
     .stApp {
@@ -34,56 +46,41 @@ biblioteca_curiosidades = [
     {"Titulo": "El primer mensaje de texto (SMS)","Texto": "Se envió el 3 de diciembre de 1992 y decía 'Merry Christmas'. Se envió desde una computadora porque los celulares no tenían teclado de letras."}
     ]
 st.title("¿Sabías que...? 💡")
-if not firebase_admin._apps:
-    try:
-        # Extraemos la info de tus Secrets
-        firebase_secrets = dict(st.secrets["firebase"])
-        cred = credentials.Certificate(firebase_secrets)
-        firebase_admin.initialize_app(cred)
-    except Exception as e:
-        st.error(f"Error al conectar con Firebase: {e}")
-        st.stop()
-
-db = firestore.client()
-
 if 'usuario_logueado' in st.session_state:
-    usuario_email = st.session_state.usuario_logueado
-    
-    user_ref = db.collection("usuarios").document(usuario_email)
-    doc = user_ref.get()
-
-    if doc.exists:
-        datos_usuario = doc.to_dict()
-        progreso = datos_usuario.get('progreso_curioso', 0)
-    else:
-        user_ref.set({'progreso_curioso': 0})
-        progreso = 0
-
+    usuario = st.session_state.usuario_logueado
+    usuario_key = usuario.replace(" ", "_").replace(".", "_")
+ 
+    # --- Leer progreso desde Realtime Database ---
+    data = db.child("usuarios").child(usuario_key).child("progreso_curioso").get()
+    progreso = int(data.val()) if data.val() is not None else 0
+ 
     if progreso < len(biblioteca_curiosidades):
         dato = biblioteca_curiosidades[progreso]
-        
+ 
         st.markdown(f"""
         <div style="background-color: #E0F7FA; padding: 25px; border-radius: 20px; border: 3px solid #4DD0E1; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
             <h2 style="color: black; font-family: 'Arial', sans-serif; margin-top: 0; font-weight: bold;">{dato['Titulo']}</h2>
             <p style="color: black; font-size: 19px; font-family: 'Verdana', sans-serif; line-height: 1.5;">{dato['Texto']}</p>
         </div>
         """, unsafe_allow_html=True)
-        
+ 
         st.write("")
-        
+ 
         if st.button("¡Qué increíble! Ver más después ➡️"):
-            user_ref.update({'progreso_curioso': progreso + 1})
-            
+            # --- Guardar progreso en Realtime Database ---
+            db.child("usuarios").child(usuario_key).child("progreso_curioso").set(progreso + 1)
             st.success("¡Dato guardado en tu memoria de héroe!")
-            st.switch_page("pages/Principal.py") 
-            
+            st.switch_page("pages/Principal.py")
+ 
     else:
         st.balloons()
         st.subheader("¡Vaya! Eres un experto en historia digital.")
         st.write("Ya conoces todos los datos curiosos que tenemos por ahora.")
         if st.button("Volver al Inicio"):
             st.switch_page("pages/Principal.py")
+ 
 else:
     st.warning("Héroe, primero debes iniciar sesión para descubrir secretos.")
     if st.button("Ir al Login"):
         st.switch_page("app.py")
+ 
