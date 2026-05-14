@@ -1,4 +1,19 @@
 import streamlit as st
+import os
+import pyrebase
+
+firebase_config = {
+    "apiKey": st.secrets["firebase"]["apiKey"],
+    "authDomain": st.secrets["firebase"]["authDomain"],
+    "projectId": st.secrets["firebase"]["projectId"],
+    "storageBucket": st.secrets["firebase"]["storageBucket"],
+    "messagingSenderId": st.secrets["firebase"]["messagingSenderId"],
+    "appId": st.secrets["firebase"]["appId"],
+    "databaseURL": st.secrets["firebase"]["databaseURL"]
+}
+firebase = pyrebase.initialize_app(firebase_config)
+db = firebase.database()
+
 st.markdown("""
               <style>
              .stApp {
@@ -20,8 +35,6 @@ st.markdown("""
              </style>
              """, unsafe_allow_html=True)
 
-import pandas as pd
-import os
 
 
 biblioteca_conceptos = [
@@ -35,49 +48,48 @@ biblioteca_conceptos = [
 
 st.title("Conceptos")
 
+
 if 'usuario_logueado' in st.session_state:
     usuario = st.session_state.usuario_logueado
-    
-    if os.path.exists("usuarios_tlearnet.csv"):
-        df = pd.read_csv("usuarios_tlearnet.csv")
-        
-        if usuario in df['usuario'].values:
-            indice = df[df['usuario'] == usuario].index[0]
-            progreso = int(df.at[indice, 'progreso'])
-            
-            if progreso < len(biblioteca_conceptos):
-                concepto = biblioteca_conceptos[progreso]
-                
-                st.markdown(f"""
-                <div style="
-                    background-color: #FFF9C4; 
-                    padding: 25px; 
-                    border-radius: 20px; 
-                    border: 3px solid #FBC02D; 
-                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-                ">
-                    <h2 style="color: black; font-family: 'Arial', sans-serif; margin-top: 0;">
-{concepto['Titulo']}
-</h2>
-<p style="color: black; font-size: 19px; font-family: 'Verdana', sans-serif; line-height: 1.5;">
-{concepto['Texto']}
-</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.write("") 
-                
-                if st.button("Continuar y regresar al inicio ➡️"):
-                    df.at[indice, 'progreso'] = progreso + 1
-                    df.to_csv("usuarios_tlearnet.csv", index=False)
-                    st.switch_page("pages/Pantalla Principal.py")
-            else:
-                st.balloons()
-                st.success("¡Felicidades! Has terminado todos los conceptos por ahora.")
-                if st.button("Volver al Inicio"):
-                    st.switch_page("pages/Pantalla Principal.py")
+    # Limpiar el nombre para usarlo como clave en la DB
+    usuario_key = usuario.replace(" ", "_").replace(".", "_")
+
+    # Leer progreso
+    data = db.child("usuarios").child(usuario_key).child("progreso").get()
+    progreso = int(data.val()) if data.val() is not None else 0
+
+    if progreso < len(biblioteca_conceptos):
+        concepto = biblioteca_conceptos[progreso]
+
+        st.markdown(f"""
+        <div style="
+            background-color: #FFF9C4; 
+            padding: 25px; 
+            border-radius: 20px; 
+            border: 3px solid #FBC02D; 
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        ">
+            <h2 style="color: black; font-family: 'Arial', sans-serif; margin-top: 0;">
+                {concepto['Titulo']}
+            </h2>
+            <p style="color: black; font-size: 19px; font-family: 'Verdana', sans-serif; line-height: 1.5;">
+                {concepto['Texto']}
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.write("")
+
+        if st.button("Continuar y regresar al inicio ➡️"):
+            # Guardar nuevo progreso
+            db.child("usuarios").child(usuario_key).child("progreso").set(progreso + 1)
+            st.switch_page("pages/Pantalla Principal.py")
     else:
-        st.error("Error: No se encontró la base de datos.")
+        st.balloons()
+        st.success("¡Felicidades! Has terminado todos los conceptos por ahora.")
+        if st.button("Volver al Inicio"):
+            st.switch_page("pages/Pantalla Principal.py")
+
 else:
     st.warning("Por favor, inicia sesión para ver tus conceptos.")
     if st.button("Ir al Login"):
