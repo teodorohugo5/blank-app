@@ -81,4 +81,4 @@ if 'usuario_logueado' in st.session_state:
 else:
     st.warning("Por favor, inicia sesión para ver tus conceptos.")
     if st.button("Ir al Login"):
-        st.switch_page("Iniciar_sesion.py")
+        st.switch_page("app.py")
